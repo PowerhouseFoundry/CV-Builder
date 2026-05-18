@@ -1,0 +1,52 @@
+Powerhouse CV Builder V14 - Firebase setup
+==========================================
+
+This version can save in two ways:
+
+1. Browser-only fallback
+   - Works immediately.
+   - Saves only on the device/browser being used.
+   - Useful for testing.
+
+2. Firebase Firestore cloud saving
+   - Recommended for real use.
+   - Students can save on one device and load on another.
+   - Teacher Admin can see all saved CVs from any device.
+
+How to enable Firebase
+----------------------
+
+1. Go to Firebase Console and create a project.
+2. Create a Web App inside that project.
+3. Copy the Firebase config object.
+4. Open firebase-config.js in this app folder.
+5. Replace the placeholder values with your real Firebase config.
+6. In Firebase, open Firestore Database and create a database.
+7. The app will automatically use a collection called cvRecords.
+
+Suggested Firestore rules for testing only
+------------------------------------------
+
+These rules make setup easy, but they are not strong security:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cvRecords/{docId} {
+      allow read, write: if true;
+    }
+  }
+}
+
+This is acceptable only for early testing or a controlled mock environment.
+For long-term use, add Firebase Authentication or stricter rules.
+
+Teacher PIN
+-----------
+
+The teacher admin PIN in this build is: 3267
+
+Important note
+--------------
+
+The simple student PIN system controls what the app interface shows, but it is not the same as full account security. CVs contain personal information, so for long-term live use you should move to proper Firebase Authentication or locked-down Firestore rules.

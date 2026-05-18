@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Powerhouse CV Builder</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js" defer></script>
+  <script src="firebase-config.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark"><img src="assets/powerhouse-logo.png" alt="The Powerhouse"></div>
+        <div>
+          <p class="eyebrow">Powerhouse Employability</p>
+          <h1>CV Builder</h1>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="ghost-btn" id="teacherAdminBtn" type="button">Teacher Admin</button>
+        <button class="ghost-btn" id="saveBtn" type="button">Save CV</button>
+        <button class="secondary-btn" id="openEditorTopBtn" type="button">Open CV Editor</button>
+        <button class="primary-btn" id="downloadBtn" type="button">Download PDF</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-card" id="homePanel">
+        <div class="hero-copy">
+          <span class="pill">Professional CVs made simple</span>
+          <h2>Build a polished CV by filling in easy boxes.</h2>
+          <p>The app handles the layout, spacing, headings and bullet points. Students can focus on their information and use sentence starters when they need help.</p>
+          <div class="hero-actions">
+            <button class="primary-btn large" id="startBtn" type="button">Start Building</button>
+            <button class="secondary-btn large" id="continueBtn" type="button">Load My Saved CV</button>
+            <button class="ghost-btn large" id="teacherAdminHomeBtn" type="button">Teacher Admin</button>
+          </div>
+        </div>
+        <div class="hero-preview" aria-hidden="true">
+          <div class="mini-cv">
+            <div class="mini-name"></div>
+            <div class="mini-line short"></div>
+            <div class="mini-heading"></div>
+            <div class="mini-line"></div>
+            <div class="mini-line"></div>
+            <div class="mini-heading"></div>
+            <div class="mini-dot"></div><div class="mini-line bullet"></div>
+            <div class="mini-dot"></div><div class="mini-line bullet"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="builder hidden" id="builderPanel">
+        <aside class="side-panel">
+          <div class="panel-card">
+            <h2>1. Choose layout</h2>
+            <p class="help-text">Layouts stay generic and professional. Industry buttons only help with wording.</p>
+            <div class="template-grid" id="templateGrid">
+              <button class="template-card active" data-template="classic" type="button"><strong>Classic</strong><span>Clean and formal</span></button>
+              <button class="template-card" data-template="modern" type="button"><strong>Modern</strong><span>Light professional accent</span></button>
+              <button class="template-card" data-template="simple" type="button"><strong>Simple</strong><span>Easy to read</span></button>
+              <button class="template-card" data-template="skills" type="button"><strong>Skills First</strong><span>Great for new workers</span></button>
+              <button class="template-card" data-template="executive" type="button"><strong>Executive</strong><span>Premium heading</span></button>
+              <button class="template-card" data-template="profile" type="button"><strong>Profile Card</strong><span>Modern side panel</span></button>
+            </div>
+          </div>
+
+          <div class="panel-card write-helper-card">
+            <h2>2. Help me write</h2>
+            <p class="help-text">Pick the job area and the section you are writing. The sentences below update straight away.</p>
+            <div class="helper-select-row">
+              <label>Job area
+                <select id="industrySelect" aria-label="Choose job area"></select>
+              </label>
+            </div>
+            <div class="starter-tabs" id="starterTabs" aria-label="Choose sentence type">
+              <button class="active" type="button" data-starter-type="statement">Personal statement</button>
+              <button type="button" data-starter-type="skills">Skills</button>
+              <button type="button" data-starter-type="training">Training</button>
+            </div>
+            <div class="starter-box" id="starterBox"><p>Select a job area to view sentence starters.</p></div>
+          </div>
+        </aside>
+
+        <section class="form-panel">
+          <div class="form-header">
+            <div>
+              <p class="eyebrow">Step-by-step editor</p>
+              <h2>3. Fill in the boxes</h2>
+            </div>
+            <button class="secondary-btn" id="clearBtn" type="button">Clear Form</button>
+          </div>
+
+          <div class="section-card">
+            <h3>Personal details</h3>
+            <div class="field-grid two">
+              <label>Full name<input data-field="fullName" type="text" placeholder="e.g. Alex Smith"></label>
+              <label>Job goal<input data-field="jobGoal" type="text" placeholder="e.g. Customer Assistant"></label>
+              <label>Phone<input data-field="phone" type="tel" placeholder="e.g. 07123 456789"></label>
+              <label>Email<input data-field="email" type="email" placeholder="e.g. alex@email.com"></label>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-title-row"><h3>Personal statement</h3><button class="small-btn" data-target="statement" type="button">Use starter here</button></div>
+            <textarea data-field="statement" rows="5" placeholder="Write a short paragraph about your strengths, experience and the type of work you are looking for."></textarea>
+          </div>
+
+          <div class="section-card">
+            <div class="section-title-row"><h3>Key skills</h3><button class="small-btn" data-target="skills" type="button">Use starter here</button></div>
+            <textarea data-field="skills" rows="5" placeholder="Add one skill per line. Example: Good timekeeping"></textarea>
+          </div>
+
+          <div class="section-card repeat-section" data-list="experience">
+            <div class="section-title-row"><h3>Work experience</h3><button class="add-btn" id="addExperience" type="button">Add Experience</button></div>
+            <div id="experienceList"></div>
+          </div>
+
+          <div class="section-card repeat-section" data-list="education">
+            <div class="section-title-row"><h3>Education and qualifications</h3><button class="add-btn" id="addEducation" type="button">Add Provider</button></div>
+            <p class="section-help">Add a provider once, then add one or more qualifications under that provider. Use this for schools, colleges, training providers, GCSEs, Functional Skills or other qualifications.</p>
+            <div id="educationList"></div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-title-row"><h3>Training and certificates</h3><button class="small-btn" data-target="training" type="button">Use starter here</button></div>
+            <textarea data-field="training" rows="4" placeholder="Add one item per line. Example: Food Hygiene training"></textarea>
+          </div>
+
+          <div class="section-card">
+            <h3>Interests</h3>
+            <textarea data-field="interests" rows="3" placeholder="Add interests that show positive qualities, commitment or teamwork."></textarea>
+          </div>
+        </section>
+
+        <section class="preview-panel">
+          <div class="preview-toolbar">
+            <div><p class="eyebrow">Live preview</p><h2>Formatted CV</h2></div>
+            <span class="status-pill" id="saveStatus">Not saved yet</span>
+          </div>
+          <button class="paper-wrap paper-click" id="openEditorBtn" type="button" aria-label="Open full CV editor">
+            <article class="cv-paper cv-classic" id="cvPreview"></article>
+            <span class="open-hint">Click preview to open full CV editor</span>
+          </button>
+        </section>
+      </section>
+    </main>
+  </div>
+
+
+  <section class="save-modal hidden" id="saveLoadModal" aria-modal="true" role="dialog" aria-label="Save and load CVs">
+    <div class="save-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow" id="saveLoadEyebrow">Save system</p>
+          <h2 id="saveLoadTitle">Save CV</h2>
+        </div>
+        <button class="icon-close" id="closeSaveLoadModal" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div class="save-mode-tabs">
+        <button class="active" id="saveModeBtn" type="button">Save</button>
+        <button id="loadModeBtn" type="button">Load</button>
+      </div>
+
+      <div class="modal-section" id="studentSavePanel">
+        <p class="help-text">Use a short student code and 4-digit PIN. Only someone with the code and PIN can load this CV. With Firebase set up, it works across devices.</p>
+        <div class="field-grid two">
+          <label>Student code<input id="saveStudentCode" type="text" placeholder="e.g. WB2026"></label>
+          <label>Student PIN<input id="saveStudentPin" type="password" inputmode="numeric" maxlength="4" placeholder="4 digits"></label>
+          <label>CV name<input id="saveCvName" type="text" placeholder="e.g. Main CV"></label>
+          <label>Student name on CV<input id="saveStudentName" type="text" placeholder="Uses CV name if blank"></label>
+        </div>
+        <div class="modal-actions">
+          <button class="primary-btn" id="confirmSaveStudentCv" type="button">Save CV</button>
+        </div>
+      </div>
+
+      <div class="modal-section hidden" id="studentLoadPanel">
+        <p class="help-text">Enter your student code and PIN to show your saved CVs only. With Firebase set up, this works from any device.</p>
+        <div class="field-grid two">
+          <label>Student code<input id="loadStudentCode" type="text" placeholder="e.g. WB2026"></label>
+          <label>Student PIN<input id="loadStudentPin" type="password" inputmode="numeric" maxlength="4" placeholder="4 digits"></label>
+        </div>
+        <div class="modal-actions">
+          <button class="primary-btn" id="findStudentCvs" type="button">Find my CVs</button>
+        </div>
+        <div class="saved-list" id="studentCvList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="save-modal hidden" id="teacherModal" aria-modal="true" role="dialog" aria-label="Teacher admin">
+    <div class="save-card teacher-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Teacher area</p>
+          <h2>Saved CV overview</h2>
+        </div>
+        <button class="icon-close" id="closeTeacherModal" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div class="modal-section" id="teacherLoginPanel">
+        <p class="help-text">Staff can view student codes, PINs and saved CVs. Default teacher PIN: 3267.</p>
+        <div class="field-grid two">
+          <label>Teacher PIN<input id="teacherPinInput" type="password" inputmode="numeric" placeholder="Enter staff PIN"></label>
+        </div>
+        <div class="modal-actions">
+          <button class="primary-btn" id="teacherLoginBtn" type="button">Open Teacher Admin</button>
+        </div>
+      </div>
+
+      <div class="modal-section hidden" id="teacherDashboardPanel">
+        <div class="dashboard-summary">
+          <span id="teacherCount">0 saved CVs</span>
+          <button class="secondary-btn" id="exportTeacherDataBtn" type="button">Export Backup</button>
+        </div>
+        <div class="teacher-table-wrap">
+          <table class="teacher-table">
+            <thead><tr><th>Student code</th><th>PIN</th><th>CV name</th><th>Name on CV</th><th>Last saved</th><th>Actions</th></tr></thead>
+            <tbody id="teacherCvTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="editor-modal hidden" id="editorModal" aria-modal="true" role="dialog" aria-label="Full CV editor">
+    <div class="editor-topbar">
+      <div>
+        <p class="eyebrow">Final design editor</p>
+        <h2>Make the CV look professional</h2>
+      </div>
+      <div class="editor-actions">
+        <button class="ghost-btn" id="backToBuilderBtn" type="button">Back to Builder</button>
+        <button class="secondary-btn" id="editorSaveBtn" type="button">Save</button>
+        <button class="primary-btn" id="editorDownloadBtn" type="button">Download PDF</button>
+      </div>
+    </div>
+
+    <div class="editor-layout">
+      <aside class="design-panel">
+        <details open>
+          <summary>Professional design</summary>
+          <label>Template
+            <select id="editorTemplate"></select>
+          </label>
+          <label>Colour theme
+            <select id="themeSelect"></select>
+          </label>
+          <label>Font
+            <select id="fontSelect"></select>
+          </label>
+          <label>Selected text size
+            <select id="fontSizeSelect"></select>
+            <span class="help-text mini-help" id="fontSizeHelp">Highlight text on the CV, then choose a size.</span>
+          </label>
+          <label>Spacing
+            <select id="spacingSelect">
+              <option value="compact">Compact</option>
+              <option value="normal">Standard</option>
+              <option value="spacious">Spacious</option>
+            </select>
+          </label>
+        </details>
+
+        <details open>
+          <summary>Photo</summary>
+          <p class="help-text">Optional. Some employers prefer no photo, so staff can decide.</p>
+          <div class="photo-row">
+            <label class="file-label">Add photo<input id="photoInput" type="file" accept="image/*"></label>
+            <button class="small-btn" id="removePhotoBtn" type="button">Remove</button>
+          </div>
+          <label>Photo style
+            <select id="photoStyleSelect">
+              <option value="none">No photo</option>
+              <option value="circle">Circle</option>
+              <option value="square">Square</option>
+              <option value="header">Header card</option>
+            </select>
+          </label>
+        </details>
+
+        <details open>
+          <summary>Text formatting</summary>
+          <p class="help-text">Highlight text on the CV, then use these simple Word-style tools.</p>
+          <div class="format-toolbar" aria-label="Text formatting tools">
+            <button type="button" data-command="bold"><strong>B</strong></button>
+            <button type="button" data-command="italic"><em>I</em></button>
+            <button type="button" data-command="underline"><u>U</u></button>
+            <button type="button" data-command="justifyLeft">Left</button>
+            <button type="button" data-command="justifyCenter">Centre</button>
+            <button type="button" data-command="justifyRight">Right</button>
+          </div>
+        </details>
+
+        <details open>
+          <summary>Add formatted items</summary>
+          <p class="help-text">These add editable items that already match the CV style.</p>
+          <div class="block-buttons">
+            <button type="button" data-insert="title">Title</button>
+            <button type="button" data-insert="subtitle">Subtitle</button>
+            <button type="button" data-block="achievement">Achievement box</button>
+            <button type="button" data-block="availability">Availability table</button>
+            <button type="button" data-block="certTable">Certificate table</button>
+            <button type="button" data-block="qualities">Personal qualities</button>
+            <button type="button" data-insert="table">Blank professional table</button>
+          </div>
+          <div class="active-blocks" id="activeBlocks"></div>
+        </details>
+
+        <details>
+          <summary>Editing help</summary>
+          <p class="help-text">Click text on the CV to edit it directly. The app keeps the professional layout, fonts and spacing controlled.</p>
+        </details>
+      </aside>
+
+      <main class="editor-canvas">
+        <article class="cv-paper cv-classic" id="editorPreview"></article>
+      </main>
+    </div>
+  </section>
+</body>
+</html>
