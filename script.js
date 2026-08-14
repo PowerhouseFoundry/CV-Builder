@@ -88,11 +88,11 @@ let activeIndustry = 'Hospitality';
 let activeStarterType = 'statement';
 
 function init(){
-  renderIndustries(); renderExperience(); renderEducation(); renderEditorOptions(); bindEvents(); initSaveSystem(); loadSaved(true); updatePreview();
+  renderIndustries(); renderExperience(); renderEducation(); renderEditorOptions(); bindEvents(); initSaveSystem(); updatePreview();
 }
 
 function bindEvents(){
-  q('#startBtn').addEventListener('click', showBuilder);
+  q('#startBtn').addEventListener('click', startFreshCv);
   q('#continueBtn').addEventListener('click', () => openSaveLoadModal('load'));
   q('#teacherAdminBtn').addEventListener('click', openTeacherModal);
   q('#teacherAdminHomeBtn').addEventListener('click', openTeacherModal);
@@ -125,6 +125,25 @@ function bindEvents(){
 }
 
 function showBuilder(){ q('#homePanel').classList.add('hidden'); q('#builderPanel').classList.remove('hidden'); }
+function startFreshCv(){
+  state.template = 'classic';
+  state.selectedTarget = 'statement';
+  state.data = {
+    fullName:'', jobGoal:'', phone:'', email:'', location:'', link:'',
+    statement:'', skills:'', educationPlace:'', course:'', english:'', maths:'', training:'', interests:''
+  };
+  state.experience = [blankExperience()];
+  state.education = [blankEducation()];
+  state.design = { theme:'navy', font:'aptos', fontSize:11.2, spacing:'normal', photo:'', photoStyle:'none', blocks:[] };
+  currentCvRecord = null;
+  updateFormFields(false);
+  syncControls();
+  renderExperience();
+  renderEducation();
+  updatePreview();
+  setSaveStatus(storageModeText());
+  showBuilder();
+}
 function openEditor(){ updatePreview(); q('#editorModal').classList.remove('hidden'); q('#editorPreview').focus(); }
 function closeEditor(){ q('#editorModal').classList.add('hidden'); updateFormFields(); updatePreview(); }
 function selectTarget(target){
@@ -529,8 +548,8 @@ function loadSaved(silent){
   try{ const parsed = JSON.parse(saved); Object.assign(state, parsed); state.design = Object.assign({theme:'navy',font:'aptos',fontSize:11.2,spacing:'normal',photo:'',photoStyle:'none',blocks:[]}, state.design || {}); if(state.design.size && !state.design.fontSize){ state.design.fontSize = state.design.size === 'compact' ? 10.3 : state.design.size === 'large' ? 12.3 : 11.2; delete state.design.size; } if(!state.experience?.length) state.experience = [blankExperience()]; migrateEducationData(); if(!state.education?.length) state.education = [blankEducation()]; updateFormFields(false); syncControls(); renderExperience(); renderEducation(); updatePreview(); q('#saveStatus').textContent = 'Loaded saved CV'; }catch(err){ console.warn(err); }
 }
 function clearForm(){
-  if(!confirm('Clear the current CV form?')) return;
-  state.template='classic'; state.data={fullName:'',jobGoal:'',phone:'',email:'',location:'',link:'',statement:'',skills:'',educationPlace:'',course:'',english:'',maths:'',training:'',interests:''}; state.experience=[blankExperience()]; state.education=[blankEducation()]; state.design={theme:'navy',font:'aptos',fontSize:11.2,spacing:'normal',photo:'',photoStyle:'none',blocks:[]}; updateFormFields(false); syncControls(); updatePreview();
+  if(!confirm('Clear the current CV form and start a new CV?')) return;
+  state.template='classic'; state.selectedTarget='statement'; state.data={fullName:'',jobGoal:'',phone:'',email:'',location:'',link:'',statement:'',skills:'',educationPlace:'',course:'',english:'',maths:'',training:'',interests:''}; state.experience=[blankExperience()]; state.education=[blankEducation()]; state.design={theme:'navy',font:'aptos',fontSize:11.2,spacing:'normal',photo:'',photoStyle:'none',blocks:[]}; currentCvRecord=null; updateFormFields(false); syncControls(); updatePreview(); setSaveStatus(storageModeText());
 }
 function downloadPdf(){ quickSaveCurrentCv(); makePdf(q('#cvPreview')); }
 function downloadPdfFromEditor(){ syncFromEditableCv(); quickSaveCurrentCv(); makePdf(q('#editorPreview')); }
