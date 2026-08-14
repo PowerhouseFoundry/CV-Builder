@@ -24,6 +24,7 @@
       <div class="top-actions">
         <button class="ghost-btn" id="teacherAdminBtn" type="button">Teacher Admin</button>
         <button class="ghost-btn" id="saveBtn" type="button">Save CV</button>
+        <button class="logout-btn hidden" id="logoutBtn" type="button">Log out</button>
         <button class="secondary-btn" id="openEditorTopBtn" type="button">Open CV Editor</button>
         <button class="primary-btn" id="downloadBtn" type="button">Download PDF</button>
       </div>
@@ -153,6 +154,24 @@
   </div>
 
 
+  <section class="save-modal hidden" id="logoutModal" aria-modal="true" role="dialog" aria-label="Log out">
+    <div class="save-card logout-card">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Before you leave</p>
+          <h2>Save your latest changes?</h2>
+        </div>
+        <button class="icon-close" id="closeLogoutModal" type="button" aria-label="Close">×</button>
+      </div>
+      <p class="logout-message">You have changes that have not been saved. Save the latest version of your CV before you log out.</p>
+      <div class="logout-actions">
+        <button class="ghost-btn" id="cancelLogoutBtn" type="button">Cancel</button>
+        <button class="logout-danger-btn" id="logoutWithoutSaveBtn" type="button">Log out without saving</button>
+        <button class="primary-btn" id="saveAndLogoutBtn" type="button">Save and log out</button>
+      </div>
+    </div>
+  </section>
+
   <section class="save-modal hidden" id="saveLoadModal" aria-modal="true" role="dialog" aria-label="Save and load CVs">
     <div class="save-card">
       <div class="modal-head">
@@ -238,6 +257,7 @@
       </div>
       <div class="editor-actions">
         <button class="ghost-btn" id="backToBuilderBtn" type="button">Back to Builder</button>
+        <button class="logout-btn" id="editorLogoutBtn" type="button">Log out</button>
         <button class="secondary-btn" id="editorSaveBtn" type="button">Save</button>
         <button class="primary-btn" id="editorDownloadBtn" type="button">Download PDF</button>
       </div>

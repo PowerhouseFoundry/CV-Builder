@@ -89,6 +89,7 @@ let activeStarterType = 'statement';
 
 function init(){
   renderIndustries(); renderExperience(); renderEducation(); renderEditorOptions(); bindEvents(); initSaveSystem(); updatePreview();
+  markCurrentStateSaved();
 }
 
 function bindEvents(){
@@ -119,12 +120,16 @@ function bindEvents(){
   qa('[data-command]').forEach(btn => btn.addEventListener('click', () => runFormatCommand(btn.dataset.command)));
   qa('[data-insert]').forEach(btn => btn.addEventListener('click', () => insertFormattedItem(btn.dataset.insert)));
   qa('[data-command], [data-insert]').forEach(btn => btn.addEventListener('mousedown', e => e.preventDefault()));
-  q('#editorPreview').addEventListener('input', syncFromEditableCv);
+  q('#editorPreview').addEventListener('input', () => { editorChangedSinceSave = true; syncFromEditableCv(); });
   ['mouseup','keyup','touchend'].forEach(evt => q('#editorPreview').addEventListener(evt, saveEditorSelection));
   document.addEventListener('selectionchange', () => { if(selectionInsideEditor()) saveEditorSelection(); });
 }
 
-function showBuilder(){ q('#homePanel').classList.add('hidden'); q('#builderPanel').classList.remove('hidden'); }
+function showBuilder(){
+  q('#homePanel').classList.add('hidden');
+  q('#builderPanel').classList.remove('hidden');
+  q('#logoutBtn')?.classList.remove('hidden');
+}
 function startFreshCv(){
   state.template = 'classic';
   state.selectedTarget = 'statement';
@@ -142,6 +147,7 @@ function startFreshCv(){
   renderEducation();
   updatePreview();
   setSaveStatus(storageModeText());
+  markCurrentStateSaved();
   showBuilder();
 }
 function openEditor(){ updatePreview(); q('#editorModal').classList.remove('hidden'); q('#editorPreview').focus(); }
@@ -255,6 +261,7 @@ function applySelectedFontSize(){
   }
 
   try{
+    editorChangedSinceSave = true;
     document.execCommand('fontSize', false, '7');
     normaliseEditorFontTags(pt);
     q('#fontSizeHelp').textContent = 'Selected text changed to ' + pt + 'pt.';
@@ -266,6 +273,7 @@ function applySelectedFontSize(){
 }
 
 function runFormatCommand(command){
+  editorChangedSinceSave = true;
   const editor = q('#editorPreview');
   if(!editor) return;
   restoreEditorSelection();
@@ -275,6 +283,7 @@ function runFormatCommand(command){
 }
 
 function insertFormattedItem(kind){
+  editorChangedSinceSave = true;
   const editor = q('#editorPreview');
   if(!editor) return;
   let html = '';
@@ -565,6 +574,9 @@ let currentCvRecord = null;
 let teacherUnlocked = false;
 let firebaseInitialised = false;
 let firestoreDb = null;
+let lastSavedStateSignature = null;
+let editorChangedSinceSave = false;
+let pendingLogoutAfterSave = false;
 
 function hasFirebaseConfig(){
   const cfg = window.POWERHOUSE_FIREBASE_CONFIG;
@@ -644,6 +656,64 @@ function snapshotState(){
   try{ syncFromEditableCv(); }catch(err){}
   return JSON.parse(JSON.stringify(state));
 }
+function currentStateSignature(){
+  return JSON.stringify(snapshotState());
+}
+function markCurrentStateSaved(){
+  lastSavedStateSignature = currentStateSignature();
+  editorChangedSinceSave = false;
+}
+function hasUnsavedChanges(){
+  return editorChangedSinceSave || currentStateSignature() !== lastSavedStateSignature;
+}
+function openLogoutModal(){ q('#logoutModal')?.classList.remove('hidden'); }
+function closeLogoutModal(){ q('#logoutModal')?.classList.add('hidden'); }
+function requestLogout(){
+  try{ if(q('#editorModal') && !q('#editorModal').classList.contains('hidden')) syncFromEditableCv(); }catch(err){}
+  if(!hasUnsavedChanges()){ finishLogout(); return; }
+  openLogoutModal();
+}
+async function saveAndLogout(){
+  closeLogoutModal();
+  if(currentCvRecord){
+    const saved = await quickSaveCurrentCv();
+    if(saved){ finishLogout(); }
+    else alert('Your latest changes could not be saved to the cloud. You have not been logged out. Please check the internet connection and try again.');
+    return;
+  }
+  pendingLogoutAfterSave = true;
+  openSaveLoadModal('save');
+}
+function finishLogout(){
+  pendingLogoutAfterSave = false;
+  closeLogoutModal();
+  q('#saveLoadModal')?.classList.add('hidden');
+  q('#teacherModal')?.classList.add('hidden');
+  q('#editorModal')?.classList.add('hidden');
+  q('#builderPanel')?.classList.add('hidden');
+  q('#homePanel')?.classList.remove('hidden');
+  q('#logoutBtn')?.classList.add('hidden');
+  currentCvRecord = null;
+  teacherUnlocked = false;
+  ['powerhouseCvBuilderV14','powerhouseCvBuilderV13','powerhouseCvBuilderV12','powerhouseCvBuilderV11','powerhouseCvBuilderV10','powerhouseCvBuilderV9','powerhouseCvBuilderV8','powerhouseCvBuilderV7','powerhouseCvBuilderV6','powerhouseCvBuilderV5','powerhouseCvBuilderV4','powerhouseCvBuilderV3','powerhouseCvBuilderV2','powerhouseCvBuilderV1'].forEach(key => localStorage.removeItem(key));
+  state.template = 'classic';
+  state.selectedTarget = 'statement';
+  state.data = {
+    fullName:'', jobGoal:'', phone:'', email:'', location:'', link:'',
+    statement:'', skills:'', educationPlace:'', course:'', english:'', maths:'', training:'', interests:''
+  };
+  state.experience = [blankExperience()];
+  state.education = [blankEducation()];
+  state.design = { theme:'navy', font:'aptos', fontSize:11.2, spacing:'normal', photo:'', photoStyle:'none', blocks:[] };
+  updateFormFields(false);
+  syncControls();
+  renderExperience();
+  renderEducation();
+  updatePreview();
+  setSaveStatus(storageModeText());
+  markCurrentStateSaved();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
 function initSaveSystem(){
   q('#saveModeBtn')?.addEventListener('click', () => setSaveLoadMode('save'));
   q('#loadModeBtn')?.addEventListener('click', () => setSaveLoadMode('load'));
@@ -651,9 +721,15 @@ function initSaveSystem(){
   q('#findStudentCvs')?.addEventListener('click', findStudentCvsFromModal);
   q('#teacherLoginBtn')?.addEventListener('click', teacherLogin);
   q('#exportTeacherDataBtn')?.addEventListener('click', exportTeacherBackup);
-  ['saveLoadModal','teacherModal'].forEach(id => {
-    q('#'+id)?.addEventListener('click', e => { if(e.target.id === id) q('#'+id).classList.add('hidden'); });
-  });
+  q('#logoutBtn')?.addEventListener('click', requestLogout);
+  q('#editorLogoutBtn')?.addEventListener('click', requestLogout);
+  q('#saveAndLogoutBtn')?.addEventListener('click', saveAndLogout);
+  q('#logoutWithoutSaveBtn')?.addEventListener('click', finishLogout);
+  q('#cancelLogoutBtn')?.addEventListener('click', closeLogoutModal);
+  q('#closeLogoutModal')?.addEventListener('click', closeLogoutModal);
+  q('#logoutModal')?.addEventListener('click', e => { if(e.target.id === 'logoutModal') closeLogoutModal(); });
+  q('#saveLoadModal')?.addEventListener('click', e => { if(e.target.id === 'saveLoadModal') closeSaveLoadModal(); });
+  q('#teacherModal')?.addEventListener('click', e => { if(e.target.id === 'teacherModal') closeTeacherModal(); });
   q('#closeSaveLoadModal')?.addEventListener('click', closeSaveLoadModal);
   q('#closeTeacherModal')?.addEventListener('click', closeTeacherModal);
   setSaveStatus(storageModeText());
@@ -669,7 +745,10 @@ function openSaveLoadModal(mode='save'){
   q('#saveLoadModal').classList.remove('hidden');
   setTimeout(() => q(mode === 'save' ? '#saveStudentCode' : '#loadStudentCode')?.focus(), 50);
 }
-function closeSaveLoadModal(){ q('#saveLoadModal').classList.add('hidden'); }
+function closeSaveLoadModal(){
+  q('#saveLoadModal').classList.add('hidden');
+  pendingLogoutAfterSave = false;
+}
 function setSaveLoadMode(mode){
   const isSave = mode === 'save';
   q('#saveLoadTitle').textContent = isSave ? 'Save CV' : 'Load Saved CV';
@@ -708,7 +787,11 @@ async function saveStudentCvFromModal(){
     currentCvRecord = { id: record.id, studentCode, studentPin, cvName, studentName };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     setSaveStatus(`Saved as ${cvName}`);
-    closeSaveLoadModal();
+    markCurrentStateSaved();
+    const shouldLogout = pendingLogoutAfterSave;
+    pendingLogoutAfterSave = false;
+    q('#saveLoadModal').classList.add('hidden');
+    if(shouldLogout) finishLogout();
   }catch(err){
     console.error(err);
     setSaveStatus('Save failed');
@@ -763,9 +846,10 @@ function applyLoadedCvRecord(record){
   updateFormFields(false); syncControls(); renderExperience(); renderEducation(); updatePreview();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   setSaveStatus(`Loaded ${record.cvName || 'saved CV'}`);
+  markCurrentStateSaved();
 }
 async function quickSaveCurrentCv(){
-  if(!currentCvRecord){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); return; }
+  if(!currentCvRecord){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); return false; }
   try{
     const existing = await getCvRecordById(currentCvRecord.id);
     if(existing){
@@ -777,13 +861,16 @@ async function quickSaveCurrentCv(){
       await saveCvRecord(record);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       setSaveStatus(`Saved as ${record.cvName || 'CV'}`);
-    }else{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      markCurrentStateSaved();
+      return true;
     }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return false;
   }catch(err){
     console.warn(err);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     setSaveStatus('Saved in this browser only');
+    return false;
   }
 }
 async function saveCv(){

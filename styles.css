@@ -155,3 +155,33 @@ button,input,textarea,select{font:inherit} button{cursor:pointer} h1,h2,h3,p{mar
   .modal-actions{justify-content:stretch; flex-direction:column;}
   .dashboard-summary{align-items:stretch; flex-direction:column;}
 }
+
+
+/* Shared-device logout */
+.logout-btn{
+  border:1px solid #efb4b4;
+  background:#fff7f7;
+  color:#a61b1b;
+  border-radius:14px;
+  padding:11px 16px;
+  font-weight:900;
+  cursor:pointer;
+}
+.logout-btn:hover{background:#feecec;border-color:#e88989;}
+.logout-card{width:min(620px,96vw);}
+.logout-message{margin:0;color:#475569;font-size:1rem;line-height:1.6;font-weight:650;}
+.logout-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:22px;}
+.logout-danger-btn{
+  border:1px solid #efb4b4;
+  background:#fff7f7;
+  color:#a61b1b;
+  border-radius:14px;
+  padding:11px 16px;
+  font-weight:900;
+  cursor:pointer;
+}
+.logout-danger-btn:hover{background:#feecec;border-color:#e88989;}
+@media(max-width:760px){
+  .logout-actions{flex-direction:column;}
+  .logout-actions button{width:100%;}
+}
