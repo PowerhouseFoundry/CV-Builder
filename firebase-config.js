@@ -1,10 +1,8 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// Powerhouse CV Builder - Firebase configuration
+// Loaded by index.html before script.js.
+// script.js initialises Firebase and connects to Firestore when this object exists.
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
+window.POWERHOUSE_FIREBASE_CONFIG = {
   apiKey: "AIzaSyAzzUYImfadYdJflChdQpoYUkrc5kuJ18U",
   authDomain: "cv-builder-1d923.firebaseapp.com",
   projectId: "cv-builder-1d923",
@@ -12,6 +10,3 @@ const firebaseConfig = {
   messagingSenderId: "302690174030",
   appId: "1:302690174030:web:5995b8c551801ee7772f1f"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
